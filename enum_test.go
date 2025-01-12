@@ -107,3 +107,207 @@ func TestDeclare2(t *testing.T) {
 
 	fmt.Printf("%#v\n", test)
 }
+
+func ExampleDeclare() {
+	type Pet interface {
+		Eat()
+		Sleep()
+	}
+
+	type Dog struct {
+		TaxNumber int
+		Pet
+	}
+
+	type Cat struct {
+		Name string
+		Pet
+	}
+
+	// usually declare it at package level
+	// it is only for illustration here
+	var PetEnum = enum.Declare[Pet, func(func(Dog), func(Cat), func(any))]()
+
+	var myPet Pet
+	myPet = Cat{Name: "Simba"}
+
+	// Output: clean litterbox: Simba
+	PetEnum.Switch(myPet)(
+		func(dog Dog) {
+			fmt.Printf("pay tax: %v\n", dog.TaxNumber)
+		},
+		func(cat Cat) {
+			fmt.Printf("clean litterbox: %v\n", cat.Name)
+		},
+		func(a any) {
+			if a != nil {
+				fmt.Printf("remove vermin: %v\n", a)
+			}
+		},
+	)
+}
+
+func ExampleNoZero() {
+	type Pet interface {
+		Eat()
+		Sleep()
+	}
+
+	type Dog struct {
+		TaxNumber int
+		Pet
+	}
+
+	type Cat struct {
+		Name string
+		Pet
+	}
+
+	// usually declare it at package level
+	// it is only for illustration here
+	var PetEnum = enum.Declare[Pet, func(func(Dog), func(Cat))](
+		enum.NoZero(),
+	)
+
+	var myPet Pet
+	myPet = Dog{TaxNumber: 42}
+
+	// Output: pay tax: 42
+	PetEnum.Switch(myPet)(
+		func(dog Dog) {
+			fmt.Printf("pay tax: %v\n", dog.TaxNumber)
+		},
+		func(cat Cat) {
+			fmt.Printf("clean litterbox: %v\n", cat.Name)
+		},
+	)
+}
+
+type petImpl struct {
+}
+
+func (p petImpl) Eat()   {}
+func (p petImpl) Sleep() {}
+
+func ExampleVariant() {
+	type Pet interface {
+		Eat()
+		Sleep()
+	}
+
+	type Dog struct {
+		TaxNumber int
+		Pet
+	}
+
+	type Cat struct {
+		Name string
+		Pet
+	}
+
+	// usually declare it at package level
+	// it is only for illustration here
+	var _ = enum.Variant[Pet, Dog]()
+	var _ = enum.Variant[Pet, Cat]()
+
+	decl, ok := enum.DeclarationFor[Pet]()
+	if !ok {
+		panic("unreachable in this example")
+	}
+
+	// Output:
+	// pet type: Dog
+	// pet type: Cat
+	for variant := range decl.Variants() {
+		fmt.Printf("pet type: %s\n", variant.Name())
+	}
+}
+
+func ExampleExternally() {
+	type Pet interface {
+		Eat()
+		Sleep()
+	}
+
+	type Dog struct {
+		TaxNumber int
+		Pet
+	}
+
+	type Cat struct {
+		Name string
+		Pet
+	}
+
+	// usually declare it at package level
+	// it is only for illustration here
+	var _ = enum.Variant[Pet, Dog](
+		// this is the default and can be omitted
+		enum.Externally(),
+	)
+	var _ = enum.Variant[Pet, Cat]()
+
+	var myPet Pet
+	myPet = Cat{Name: "Simba"}
+	// Note: to not lose the interface information, you MUST provide the pointer
+	// to the interface variable, otherwise the type itself is marshalled.
+	buf, err := json.Marshal(&myPet)
+	if err != nil {
+		panic(fmt.Errorf("unreachable in this example: %w", err))
+	}
+	// Output: {"Cat":{"Name":"Simba","Pet":null}}
+	fmt.Println(string(buf))
+
+	var pet2 Pet
+	if err := json.Unmarshal(buf, &pet2); err != nil {
+		panic(fmt.Errorf("unreachable in this example: %w", err))
+	}
+
+	if pet2 != myPet {
+		panic(fmt.Errorf("unreachable in this example: %w", err))
+	}
+}
+
+func ExampleAdjacently() {
+	type Pet interface {
+		Eat()
+		Sleep()
+	}
+
+	type Dog struct {
+		TaxNumber int
+		Pet
+	}
+
+	type Cat struct {
+		Name string
+		Pet
+	}
+
+	// usually declare it at package level
+	// it is only for illustration here
+	var _ = enum.Variant[Pet, Dog](
+		enum.Adjacently("kind", "obj"),
+	)
+	var _ = enum.Variant[Pet, Cat]()
+
+	var myPet Pet
+	myPet = Cat{Name: "Simba"}
+	// Note: to not lose the interface information, you MUST provide the pointer
+	// to the interface variable, otherwise the type itself is marshalled.
+	buf, err := json.Marshal(&myPet)
+	if err != nil {
+		panic(fmt.Errorf("unreachable in this example: %w", err))
+	}
+	// Output: {"kind":"Cat","obj":{"Name":"Simba","Pet":null}}
+	fmt.Println(string(buf))
+
+	var pet2 Pet
+	if err := json.Unmarshal(buf, &pet2); err != nil {
+		panic(fmt.Errorf("unreachable in this example: %w", err))
+	}
+
+	if pet2 != myPet {
+		panic(fmt.Errorf("unreachable in this example: %w", err))
+	}
+}

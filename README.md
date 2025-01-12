@@ -23,7 +23,7 @@ import(
 )
 
 // Note, that AcceptedOffer and UncheckOffer must be assignable to Offer, which is checked at 
-// package initialization time. Offer must not be any.
+// package initialization time. Offer must not be the empty interface.
 var OfferEnum = enum.Declare[Offer, func(func(AcceptedOffer), func(UncheckOffer), func(any))](
 	// options over options, inspired by and compatible with https://serde.rs/enum-representations.html
 	enum.Rename[AcceptedOffer]("aof"),    // provide custom names
