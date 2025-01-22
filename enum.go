@@ -23,12 +23,14 @@ const (
 )
 
 type enum struct {
-	variants                  []reflect.Type // enumeration = declaration order
-	variantTypeFromString     map[string]reflect.Type
-	variantStringFromType     map[reflect.Type]string
-	adjacentNameDiscriminator string
-	adjacentNameContent       string
-	encoding                  encodingType
+	variants                       []reflect.Type // enumeration = declaration order
+	variantTypeFromString          map[string]reflect.Type
+	variantStringFromType          map[reflect.Type]string
+	adjacentNameDiscriminator      string
+	adjacentNameContent            string
+	internallyTagNameDiscriminator string
+
+	encoding encodingType
 }
 
 // Enumeration represents a union type declaration and enumerates the declared subtypes for a distinct interface type.

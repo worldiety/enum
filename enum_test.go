@@ -311,3 +311,47 @@ func ExampleAdjacently() {
 		panic(fmt.Errorf("unreachable in this example: %w", err))
 	}
 }
+
+func ExampleInternally() {
+	type Pet interface {
+		Eat()
+		Sleep()
+	}
+
+	type Dog struct {
+		TaxNumber int
+		Pet
+	}
+
+	type Cat struct {
+		Name string
+		Pet
+	}
+
+	// usually declare it at package level
+	// it is only for illustration here
+	var _ = enum.Variant[Pet, Dog](
+		enum.Internally("type"),
+	)
+	var _ = enum.Variant[Pet, Cat]()
+
+	var myPet Pet
+	myPet = Cat{Name: "Simba"}
+	// Note: to not lose the interface information, you MUST provide the pointer
+	// to the interface variable, otherwise the type itself is marshalled.
+	buf, err := json.Marshal(&myPet)
+	if err != nil {
+		panic(fmt.Errorf("unreachable in this example: %w", err))
+	}
+	// Output: {"Name":"Simba","Pet":null,"type":"Cat"}
+	fmt.Println(string(buf))
+
+	var pet2 Pet
+	if err := json.Unmarshal(buf, &pet2); err != nil {
+		panic(fmt.Errorf("unreachable in this example: %w", err))
+	}
+
+	if pet2 != myPet {
+		panic(fmt.Errorf("unreachable in this example: %w", err))
+	}
+}

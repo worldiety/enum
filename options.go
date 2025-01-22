@@ -64,8 +64,10 @@ func Externally() Option {
 	})
 }
 
-func Internally() Option {
-	return nil
+func Internally(tagName string) Option {
+	return optFunc(func(enumCfg *enumCfg) {
+		enumCfg.jsonOpts = InternallyOptions{Tag: tagName}
+	})
 }
 
 func Untagged() Option {

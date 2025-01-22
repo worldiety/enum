@@ -5,6 +5,7 @@
 package json
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/worldiety/enum"
 	"reflect"
@@ -15,6 +16,7 @@ func interfaceDecoder(d *decodeState, v reflect.Value) error {
 	// because the payload may be declared BEFORE any tag occurs (at least for adjacent and internally tagged).
 	// Though, externally tagged can be optimized but they are not exact either,
 	// because other tags may occur as a sibling.
+
 	tmp := map[string]RawMessage{}
 	tmpV := reflect.ValueOf(tmp)
 	if err := d.object(tmpV); err != nil {
@@ -35,16 +37,51 @@ func interfaceDecoder(d *decodeState, v reflect.Value) error {
 	case enum.AdjacentlyOptions:
 		return decodeAdjacently(d, tmp, v, decl, jte)
 	case enum.UntaggedOptions:
-		d.saveError(&UnmarshalTypeError{Value: "untagged interfaces cannot be unmarshalled", Type: t, Offset: int64(d.off)})
-		d.skip()
-		return nil
-
+		return &UnmarshalTypeError{Value: "untagged interfaces cannot be unmarshalled", Type: t, Offset: int64(d.off)}
+	case enum.InternallyOptions:
+		raw := bufferObjectRoundTrip(tmp)
+		return decodeInternally(d, raw, tmp, v, decl, jte)
 	default:
-		d.saveError(&UnmarshalTypeError{Value: fmt.Sprintf("unknown json tag options: %T", jte), Type: t, Offset: int64(d.off)})
-		d.skip()
-		return nil
+		return &UnmarshalTypeError{Value: fmt.Sprintf("unknown json tag options: %T", jte), Type: t, Offset: int64(d.off)}
+	}
+}
+
+func bufferObjectRoundTrip(obj map[string]RawMessage) []byte {
+	var buf bytes.Buffer
+	buf.WriteString("{")
+	for key, message := range obj {
+		buf.Write(appendString(buf.AvailableBuffer(), key, false))
+		buf.WriteString(":")
+		buf.Write(message)
+		buf.WriteString(",")
+	}
+	if len(obj) > 0 {
+		buf.Truncate(buf.Len() - 1)
 	}
 
+	buf.WriteString("}")
+
+	return buf.Bytes()
+}
+
+func decodeInternally(d *decodeState, raw RawMessage, obj map[string]RawMessage, v reflect.Value, decl enum.Declaration, jte enum.InternallyOptions) error {
+	kindTag, ok := unquote(obj[jte.Tag])
+	if !ok {
+		return fmt.Errorf("cannot unquote json tag '%s'", jte.Tag)
+	}
+	variantT, ok := decl.Type(kindTag)
+	if !ok {
+		return fmt.Errorf("unknown type tag '%v' for declaration of '%v'", kindTag, decl.EnumType())
+	}
+
+	targetVar := reflect.New(variantT).Interface()
+	if err := Unmarshal(raw, &targetVar); err != nil {
+		return err
+	}
+
+	v.Set(reflect.ValueOf(targetVar).Elem())
+
+	return nil
 }
 
 func decodeAdjacently(d *decodeState, obj map[string]RawMessage, v reflect.Value, decl enum.Declaration, jte enum.AdjacentlyOptions) error {

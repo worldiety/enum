@@ -23,6 +23,12 @@ type AdjacentlyOptions struct {
 
 func (AdjacentlyOptions) jsonOption() {}
 
+type InternallyOptions struct {
+	Tag string // name of the tag key in json
+}
+
+func (InternallyOptions) jsonOption() {}
+
 type ExternallyOptions struct {
 }
 
