@@ -1,5 +1,7 @@
 # enum
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/worldiety/enum.svg)](https://pkg.go.dev/github.com/worldiety/enum)
+
 Package enum provides helpers to enable enumerable interfaces for Go.
 Sometimes, exhaustive checks and enumeration are required to simplify code and let this fact be checked by the compiler.
 In general, due to the way, the Go type system has been designed, this is not possible.
