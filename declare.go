@@ -171,10 +171,15 @@ func Declare[Interface any, MatchFn any](opts ...Option) Enumeration[Interface, 
 			enum.variants = append(enum.variants, enumVariantT)
 		}
 
-		name := enumVariantT.Name()
-		if _, ok := enum.fromNameToType[name]; !ok {
-			enum.fromNameToType[name] = enumVariantT
-			enum.fromTypeToName[enumVariantT] = name
+		newName, ok := enum.fromTypeToName[enumVariantT]
+		if !ok {
+			fallbackName := enumVariantT.Name()
+			newName = fallbackName
+		}
+
+		if _, ok := enum.fromNameToType[newName]; !ok {
+			enum.fromNameToType[newName] = enumVariantT
+			enum.fromTypeToName[enumVariantT] = newName
 		}
 
 		//fmt.Println(enumVariantT)

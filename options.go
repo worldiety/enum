@@ -31,7 +31,8 @@ func (c enumCfg) Sealed() bool { return c.sealed }
 func Rename[T any](name string) Option {
 	return optFunc(func(enumCfg *enumCfg) {
 		t := reflect.TypeFor[T]()
-		enumCfg.fromNameToType[name] = t
+		// do not set the inverse lookup, because this may accidentally overwrite the wrong name
+		//enumCfg.fromNameToType[name] = t
 		enumCfg.fromTypeToName[t] = name
 	})
 }

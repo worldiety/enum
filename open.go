@@ -38,15 +38,17 @@ func Variant[Interface any, Member any](opts ...Option) any {
 		return mType == r
 	})
 
+	fallbackName := mType.Name()
+	decl.variants = append(decl.variants, mType)
+	decl.cfg.fromTypeToName[mType] = fallbackName
+
 	// rewrite all settings
 	for _, opt := range opts {
 		opt.apply(&decl.cfg)
 	}
 
-	name := mType.Name()
-	decl.variants = append(decl.variants, mType)
-	decl.cfg.fromTypeToName[mType] = name
-	decl.cfg.fromNameToType[name] = mType
+	newName := decl.cfg.fromTypeToName[mType]
+	decl.cfg.fromNameToType[newName] = mType
 
 	globalDeclContext.decls[eType] = decl
 
